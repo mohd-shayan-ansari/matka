@@ -1,0 +1,10 @@
+# Keep config.js OUT of git if you commit real keys
+# config.js
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.swp

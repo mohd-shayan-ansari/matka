@@ -1,0 +1,23 @@
+﻿{
+  "generated": "2026-10-23",
+  "slots": [
+    { "time": "09:00", "period": "AM", "results": [56, 15, 61, 27, 66, 18], "overridden": [false, false, false, false, false, false] },
+    { "time": "09:40", "period": "AM", "results": [87, 86, 29, 30, 33, 88], "overridden": [false, false, false, false, false, false] },
+    { "time": "10:20", "period": "AM", "results": [5, 98, 23, 52, 37, 70], "overridden": [false, false, false, false, false, false] },
+    { "time": "11:00", "period": "AM", "results": [23, 23, 37, 18, 51, 10], "overridden": [false, false, false, false, false, false] },
+    { "time": "11:40", "period": "AM", "results": [13, 76, 22, 17, 73, 21], "overridden": [false, false, false, false, false, false] },
+    { "time": "12:20", "period": "PM", "results": [25, 39, 74, 9, 29, 99], "overridden": [false, false, false, false, false, false] },
+    { "time": "01:00", "period": "PM", "results": [76, 49, 77, 30, 99, 6], "overridden": [false, false, false, false, false, false] },
+    { "time": "01:40", "period": "PM", "results": [29, 40, 13, 52, 4, 35], "overridden": [false, false, false, false, false, false] },
+    { "time": "02:20", "period": "PM", "results": [5, 1, 11, 88, 40, 87], "overridden": [false, false, false, false, false, false] },
+    { "time": "03:00", "period": "PM", "results": [42, 28, 53, 26, 10, 89], "overridden": [false, false, false, false, false, false] },
+    { "time": "03:40", "period": "PM", "results": [2, 1, 23, 46, 6, 22], "overridden": [false, false, false, false, false, false] },
+    { "time": "04:20", "period": "PM", "results": [80, 97, 95, 44, 29, 20], "overridden": [false, false, false, false, false, false] },
+    { "time": "05:00", "period": "PM", "results": [48, 44, 29, 90, 7, 60], "overridden": [false, false, false, false, false, false] },
+    { "time": "05:40", "period": "PM", "results": [25, 55, 12, 14, 27, 14], "overridden": [false, false, false, false, false, false] },
+    { "time": "06:20", "period": "PM", "results": [56, 51, 60, 40, 80, 23], "overridden": [false, false, false, false, false, false] },
+    { "time": "07:00", "period": "PM", "results": [3, 3, 64, 39, 35, 26], "overridden": [false, false, false, false, false, false] }
+  ],
+  "categories": ["SULTAN PURI", "WORLI", "RAJSHRI", "CHARMINAR", "BHAGYA REKHA", "PESHAWAR"],
+  "lastUpdated": "2026-10-23T22:00:00+05:30"
+}

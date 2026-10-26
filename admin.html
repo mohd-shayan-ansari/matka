@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MATKA BOSS – Admin Panel</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <!-- Project config -->
+  <script src="config.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0e1a;
+      --surface: #111827;
+      --surface2: #1a2234;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.12);
+      --text: #f1f5f9;
+      --text2: #94a3b8;
+      --text3: #64748b;
+      --accent: #6366f1;
+      --accent2: #818cf8;
+      --green: #10b981;
+      --green2: #34d399;
+      --red: #ef4444;
+      --orange: #f97316;
+      --yellow: #fbbf24;
+      --shadow: 0 25px 60px rgba(0,0,0,0.5);
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── LOGIN SCREEN ─── */
+    #loginScreen {
+      position: fixed; inset: 0; z-index: 999;
+      display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at 30% 40%, rgba(99,102,241,0.18) 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 70%, rgba(139,92,246,0.12) 0%, transparent 50%),
+                  #0a0e1a;
+    }
+    .login-card {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: 24px; padding: 44px 40px;
+      width: 100%; max-width: 400px;
+      box-shadow: 0 40px 120px rgba(0,0,0,0.6);
+      animation: fadeUp 0.4s ease;
+    }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    .login-logo {
+      width: 56px; height: 56px; background: linear-gradient(135deg,#6366f1,#8b5cf6);
+      border-radius: 16px; display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 900; color: #fff; margin: 0 auto 20px;
+    }
+    .login-title { text-align: center; font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .login-sub { text-align: center; font-size: 13px; color: var(--text2); margin-bottom: 32px; }
+    .form-group { margin-bottom: 18px; }
+    .form-label { font-size: 11px; font-weight: 700; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; display: block; }
+    .form-input {
+      width: 100%; padding: 13px 16px; background: var(--surface2);
+      border: 1px solid var(--border2); border-radius: 12px;
+      color: var(--text); font-size: 14px; font-family: 'Inter', sans-serif;
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
+    .btn-login {
+      width: 100%; padding: 14px; background: linear-gradient(135deg,#6366f1,#8b5cf6);
+      color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 700;
+      cursor: pointer; font-family: 'Inter', sans-serif; margin-top: 6px;
+      transition: opacity 0.2s, transform 0.15s; letter-spacing: 0.3px;
+    }
+    .btn-login:hover { opacity: 0.9; transform: translateY(-1px); }
+    .login-error {
+      background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.25);
+      color: #fca5a5; border-radius: 10px; padding: 11px 14px;
+      font-size: 13px; font-weight: 500; margin-bottom: 16px; display: none;
+    }
+
+    /* ── MAIN LAYOUT ─── */
+    #adminApp { display: none; }
+    .top-bar {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+    }
+    .top-bar-inner {
+      max-width: 1400px; margin: 0 auto; padding: 0 24px; height: 66px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .admin-brand { display: flex; align-items: center; gap: 12px; }
+    .admin-brand-icon {
+      width: 40px; height: 40px; background: linear-gradient(135deg,#6366f1,#8b5cf6);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 900; color: #fff;
+    }
+    .admin-brand-text { font-size: 15px; font-weight: 800; }
+    .admin-brand-sub { font-size: 11px; color: var(--text3); display: block; margin-top: 1px; }
+    .top-bar-right { display: flex; align-items: center; gap: 14px; }
+    .live-clock { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text2); }
+    .save-status { font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 8px; }
+    .save-status.saved { background: rgba(16,185,129,0.15); color: var(--green2); border: 1px solid rgba(16,185,129,0.25); }
+    .save-status.saving { background: rgba(251,191,36,0.1); color: var(--yellow); border: 1px solid rgba(251,191,36,0.2); }
+    .save-status.error { background: rgba(239,68,68,0.12); color: #fca5a5; border: 1px solid rgba(239,68,68,0.2); }
+    .btn-logout {
+      padding: 8px 18px; background: rgba(239,68,68,0.12); color: #fca5a5;
+      border: 1px solid rgba(239,68,68,0.2); border-radius: 10px;
+      font-size: 12px; font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif;
+      transition: background 0.2s;
+    }
+    .btn-logout:hover { background: rgba(239,68,68,0.22); }
+
+    .main-wrap { max-width: 1400px; margin: 0 auto; padding: 28px 24px 60px; }
+
+    /* ── STATS BAR ─── */
+    .stats-bar { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 28px; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 18px 20px;
+    }
+    .stat-label { font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+    .stat-value { font-size: 28px; font-weight: 900; font-family: 'JetBrains Mono', monospace; }
+    .stat-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+    .c-indigo { color: #818cf8; }
+    .c-green  { color: var(--green2); }
+    .c-orange { color: var(--orange); }
+    .c-yellow { color: var(--yellow); }
+
+    /* ── SECTION ─── */
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+    .section-title { font-size: 18px; font-weight: 800; }
+    .section-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 700;
+      cursor: pointer; font-family: 'Inter', sans-serif; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 7px;
+    }
+    .btn-primary { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; }
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-ghost { background: var(--surface2); color: var(--text2); border: 1px solid var(--border2); }
+    .btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+    .btn-green { background: rgba(16,185,129,0.15); color: var(--green2); border: 1px solid rgba(16,185,129,0.25); }
+    .btn-green:hover { background: rgba(16,185,129,0.25); }
+    .btn-red { background: rgba(239,68,68,0.12); color: #fca5a5; border: 1px solid rgba(239,68,68,0.2); }
+    .btn-red:hover { background: rgba(239,68,68,0.22); }
+    .btn-sm { padding: 6px 12px; font-size: 11px; border-radius: 8px; }
+
+    /* ── TABLE ─── */
+    .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; margin-bottom: 28px; }
+    .table-wrap { overflow-x: auto; }
+    .admin-table { width: 100%; border-collapse: collapse; min-width: 900px; }
+    .admin-table thead { border-bottom: 1px solid var(--border); }
+    .admin-table th {
+      padding: 14px 14px; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.8px; color: var(--text3);
+      text-align: center; background: rgba(255,255,255,0.02);
+    }
+    .admin-table th.th-time { text-align: left !important; }
+    .admin-table tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    .admin-table tbody tr:last-child { border-bottom: none; }
+    .admin-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+    .admin-table td { padding: 10px 14px; text-align: center; vertical-align: middle; }
+    .admin-table td.td-time { text-align: left !important; white-space: nowrap; }
+    .time-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--surface2); border: 1px solid var(--border2);
+      padding: 6px 12px; border-radius: 10px;
+    }
+    .time-text { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--text); }
+    .time-period { font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: 0.5px; }
+    .row-past .time-pill { opacity: 0.5; }
+    .row-current { background: rgba(99,102,241,0.06) !important; }
+    .row-current .time-pill { border-color: rgba(99,102,241,0.4); }
+
+    /* Number input cell */
+    .num-cell { position: relative; }
+    .num-input-wrap {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--surface2); border: 1px solid var(--border2);
+      border-radius: 10px; padding: 4px 6px;
+      transition: border-color 0.2s;
+    }
+    .num-input-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(99,102,241,0.2); }
+    .num-input-wrap.is-overridden { border-color: rgba(251,191,36,0.4); background: rgba(251,191,36,0.06); }
+    .num-input {
+      width: 46px; text-align: center;
+      font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700;
+      background: transparent; border: none; color: var(--text);
+      outline: none; padding: 2px 0;
+    }
+    .num-input::placeholder { color: var(--text3); }
+    .regen-btn {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border2);
+      color: var(--text3); font-size: 11px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s; flex-shrink: 0;
+    }
+    .regen-btn:hover { background: rgba(99,102,241,0.2); color: var(--accent2); border-color: rgba(99,102,241,0.4); }
+    .override-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--yellow);
+      position: absolute; top: 4px; right: 4px; display: none;
+    }
+    .num-input-wrap.is-overridden ~ .override-dot { display: block; }
+
+    /* Row action btns */
+    .row-actions { display: flex; gap: 5px; align-items: center; justify-content: center; flex-wrap: wrap; }
+
+    /* ── UPCOMING BANNER ─── */
+    .upcoming-banner {
+      background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1));
+      border: 1px solid rgba(99,102,241,0.25);
+      border-radius: 16px; padding: 18px 22px; margin-bottom: 24px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .ub-icon { font-size: 22px; flex-shrink: 0; }
+    .ub-text { font-size: 13px; color: var(--text2); }
+    .ub-text strong { color: var(--text); font-weight: 700; }
+
+    /* ── TOAST ─── */
+    #toast {
+      position: fixed; bottom: 28px; right: 28px; z-index: 9999;
+      padding: 14px 22px; border-radius: 14px; font-size: 14px; font-weight: 600;
+      transform: translateY(80px); opacity: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      pointer-events: none;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { background: rgba(16,185,129,0.9); color: #fff; box-shadow: 0 8px 30px rgba(16,185,129,0.3); }
+    #toast.error   { background: rgba(239,68,68,0.9);  color: #fff; box-shadow: 0 8px 30px rgba(239,68,68,0.3); }
+    #toast.info    { background: rgba(99,102,241,0.9); color: #fff; box-shadow: 0 8px 30px rgba(99,102,241,0.3); }
+
+    /* ── RESPONSIVE ─── */
+    @media (max-width: 900px) { .stats-bar { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 600px) {
+      .main-wrap { padding: 16px; }
+      .stats-bar { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .top-bar-inner { padding: 0 14px; }
+      .live-clock { display: none; }
+    }
+
+    /* category col colors */
+    .col-0 { color: #60a5fa; } /* sultan */
+    .col-1 { color: #a78bfa; } /* worli */
+    .col-2 { color: #34d399; } /* rajshri */
+    .col-3 { color: #fb923c; } /* charminar */
+    .col-4 { color: #f87171; } /* bhagya */
+    .col-5 { color: #818cf8; } /* peshawar */
+    .th-col-0 { color: #60a5fa !important; }
+    .th-col-1 { color: #a78bfa !important; }
+    .th-col-2 { color: #34d399 !important; }
+    .th-col-3 { color: #fb923c !important; }
+    .th-col-4 { color: #f87171 !important; }
+    .th-col-5 { color: #818cf8 !important; }
+  </style>
+</head>
+<body>
+
+<!-- ═══ LOGIN SCREEN ═══ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">MB</div>
+    <div class="login-title">Admin Access</div>
+    <div class="login-sub">MATKA BOSS · Control Panel</div>
+    <div class="login-error" id="loginError"></div>
+    <div class="form-group">
+      <label class="form-label" for="loginEmail">Email</label>
+      <input class="form-input" type="email" id="loginEmail" placeholder="admin@example.com" autocomplete="email" />
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="loginPass">Password</label>
+      <input class="form-input" type="password" id="loginPass" placeholder="Enter password" autocomplete="current-password" />
+    </div>
+    <button class="btn-login" id="loginBtn" onclick="doLogin()">Sign In →</button>
+  </div>
+</div>
+
+<!-- ═══ ADMIN APP ═══ -->
+<div id="adminApp">
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="top-bar-inner">
+      <div class="admin-brand">
+        <div class="admin-brand-icon">MB</div>
+        <div>
+          <span class="admin-brand-text">MATKA BOSS</span>
+          <span class="admin-brand-sub">Admin Control Panel</span>
+        </div>
+      </div>
+      <div class="top-bar-right">
+        <span class="live-clock" id="adminClock">--:--:-- --</span>
+        <span class="save-status saved" id="saveStatus">✓ All saved</span>
+        <button class="btn-logout" onclick="doLogout()">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-wrap">
+
+    <!-- STATS -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-label">Total Slots</div>
+        <div class="stat-value c-indigo" id="statTotal">16</div>
+        <div class="stat-sub">16 time slots today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Published</div>
+        <div class="stat-value c-green" id="statPublished">0</div>
+        <div class="stat-sub">slots already opened</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Overridden</div>
+        <div class="stat-value c-yellow" id="statOverridden">0</div>
+        <div class="stat-sub">admin-set results</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Upcoming</div>
+        <div class="stat-value c-orange" id="statUpcoming">0</div>
+        <div class="stat-sub">slots not yet published</div>
+      </div>
+    </div>
+
+    <!-- UPCOMING NOTICE -->
+    <div class="upcoming-banner">
+      <span class="ub-icon">⚡</span>
+      <div class="ub-text">
+        <strong>Auto-generated results are pre-filled.</strong>
+        To override a result, edit the number in any cell and click <strong>Save All</strong>.
+        Numbers highlighted in <span style="color:var(--yellow)">amber</span> are admin-overridden.
+        Use 🔀 to re-randomize any single cell.
+      </div>
+    </div>
+
+    <!-- RESULTS TABLE -->
+    <div class="section-header">
+      <div>
+        <div class="section-title">📋 Results Manager</div>
+        <div class="section-sub">Edit numbers for any time slot · Save pushes to public site</div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-ghost" onclick="regenAllUpcoming()">🔀 Regen All Upcoming</button>
+        <button class="btn btn-ghost" onclick="resetAllOverrides()">↩ Clear Overrides</button>
+        <button class="btn btn-primary" onclick="saveAll()">💾 Save All</button>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-wrap">
+        <table class="admin-table" id="adminTable">
+          <thead>
+            <tr>
+              <th class="th-time">TIME SLOT</th>
+              <th class="th-col-0">SULTAN PURI</th>
+              <th class="th-col-1">WORLI</th>
+              <th class="th-col-2">RAJSHRI</th>
+              <th class="th-col-3">CHARMINAR</th>
+              <th class="th-col-4">BHAGYA REKHA</th>
+              <th class="th-col-5">PESHAWAR</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="adminTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /main-wrap -->
+</div><!-- /adminApp -->
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════
+// MATKA BOSS — Admin Panel JS (Supabase Edition)
+// Auth   : Supabase email/password (sb.auth.signInWithPassword)
+// Storage: matka_results table in Supabase
+// ════════════════════════════════════════════
+
+// ── SUPABASE INIT ─────────────────────────────────
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ── CONSTANTS ─────────────────────────────────────
+const CATEGORIES = ['SULTAN PURI','WORLI','RAJSHRI','CHARMINAR','BHAGYA REKHA','PESHAWAR'];
+const TIME_SLOTS = [
+  {t:'09:00',p:'AM'},{t:'09:40',p:'AM'},{t:'10:20',p:'AM'},{t:'11:00',p:'AM'},
+  {t:'11:40',p:'AM'},{t:'12:20',p:'PM'},{t:'01:00',p:'PM'},{t:'01:40',p:'PM'},
+  {t:'02:20',p:'PM'},{t:'03:00',p:'PM'},{t:'03:40',p:'PM'},{t:'04:20',p:'PM'},
+  {t:'05:00',p:'PM'},{t:'05:40',p:'PM'},{t:'06:20',p:'PM'},{t:'07:00',p:'PM'},
+];
+
+// ── HELPERS ────────────────────────────────────────
+function rng() { return Math.floor(Math.random() * 99) + 1; }
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function slotToMins(slot) {
+  let [h, m] = slot.t.split(':').map(Number);
+  if (slot.p === 'PM' && h !== 12) h += 12;
+  if (slot.p === 'AM' && h === 12) h = 0;
+  return h * 60 + m;
+}
+const SLOT_MINS = TIME_SLOTS.map(slotToMins);
+
+function getIST() {
+  const now = new Date();
+  return new Date(now.getTime() + now.getTimezoneOffset()*60000 + 5.5*3600000);
+}
+function getISTMins() {
+  const ist = getIST();
+  return ist.getHours() * 60 + ist.getMinutes();
+}
+function getISTDateStr() {
+  const ist = getIST();
+  return `${ist.getFullYear()}-${String(ist.getMonth()+1).padStart(2,'0')}-${String(ist.getDate()).padStart(2,'0')}`;
+}
+
+function slotStatus(ri) {
+  const nowMins = getISTMins();
+  if (nowMins > SLOT_MINS[ri]) return 'past';
+  if (nowMins === SLOT_MINS[ri]) return 'current';
+  return 'upcoming';
+}
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `show ${type}`;
+  clearTimeout(t._to);
+  t._to = setTimeout(() => { t.className = ''; }, 3200);
+}
+
+function setSaveStatus(s) {
+  const el = document.getElementById('saveStatus');
+  el.className = 'save-status ' + s;
+  if (s === 'saved')  el.textContent = '✓ All saved';
+  else if (s === 'saving') el.textContent = '⟳ Saving…';
+  else                el.textContent = '✗ Save failed';
+}
+
+// ── STATE ──────────────────────────────────────────
+// resultsData[ri] = { numbers:[n0..n5], original:[n0..n5], overridden:[bool x6] }
+let resultsData = [];
+let currentDate = '';
+
+// ── AUTH ───────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pwd   = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+  const btn   = document.getElementById('loginBtn');
+
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pwd });
+
+  btn.disabled = false;
+  btn.textContent = 'Sign In →';
+
+  if (error) {
+    errEl.textContent = error.message;
+    errEl.style.display = 'block';
+    return;
+  }
+  showAdminApp();
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('adminApp').style.display = 'none';
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPass').value = '';
+}
+
+function showAdminApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminApp').style.display = 'block';
+  initAdmin();
+}
+
+// Allow Enter key
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('loginEmail').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+// ── LOAD FROM SUPABASE ──────────────────────────────
+async function loadResults(dateStr) {
+  currentDate = dateStr || getISTDateStr();
+
+  const { data, error } = await sb
+    .from('matka_results')
+    .select('slot_index, numbers')
+    .eq('result_date', currentDate)
+    .order('slot_index');
+
+  if (error) {
+    showToast('Load error: ' + error.message, 'error');
+    // Build empty data so table still renders
+    resultsData = TIME_SLOTS.map(() => ({ numbers: [0,0,0,0,0,0], original: [0,0,0,0,0,0], overridden: [false,false,false,false,false,false] }));
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    // No data for this date yet — generate fresh random numbers
+    resultsData = TIME_SLOTS.map(() => {
+      const nums = Array.from({ length: 6 }, () => rng());
+      return { numbers: [...nums], original: [...nums], overridden: [false,false,false,false,false,false] };
+    });
+    showToast('No data for this date — random numbers generated. Click Save All to store.', 'info');
+  } else {
+    // Build a full 16-slot array; missing slots get fresh randoms
+    const found = new Map(data.map(r => [r.slot_index, r.numbers]));
+    resultsData = TIME_SLOTS.map((_, i) => {
+      const nums = found.has(i) ? [...found.get(i)] : Array.from({ length: 6 }, () => rng());
+      return { numbers: [...nums], original: [...nums], overridden: [false,false,false,false,false,false] };
+    });
+  }
+}
+
+// ── GENERATE FRESH DATA ──────────────────────────────
+function generateFreshData() {
+  resultsData = TIME_SLOTS.map(() => {
+    const nums = Array.from({ length: 6 }, () => rng());
+    return { numbers: [...nums], original: [...nums], overridden: [false,false,false,false,false,false] };
+  });
+}
+
+// ── BUILD TABLE ───────────────────────────────────────
+function buildTable() {
+  const tbody = document.getElementById('adminTableBody');
+  tbody.innerHTML = '';
+  const isToday = currentDate === getISTDateStr();
+
+  resultsData.forEach((row, ri) => {
+    const status = isToday ? slotStatus(ri) : (currentDate < getISTDateStr() ? 'past' : 'upcoming');
+    const tr = document.createElement('tr');
+    tr.id = `row-${ri}`;
+    tr.className = status === 'current' ? 'row-current' : (status === 'past' ? 'row-past' : '');
+
+    let statusIcon = '';
+    if (status === 'past')    statusIcon = '<span style="color:var(--green2);font-size:10px;margin-left:4px">✓</span>';
+    else if (status === 'current') statusIcon = '<span style="color:var(--accent2);font-size:10px;margin-left:4px">●</span>';
+    else statusIcon = '<span style="color:var(--text3);font-size:10px;margin-left:4px">○</span>';
+
+    tr.innerHTML = `<td class="td-time">
+      <div class="time-pill">
+        <span class="time-text">${TIME_SLOTS[ri].t}</span>
+        <span class="time-period">${TIME_SLOTS[ri].p}</span>
+        ${statusIcon}
+      </div>
+    </td>`;
+
+    for (let ci = 0; ci < 6; ci++) {
+      const val = row.numbers[ci];
+      const ov  = row.overridden[ci];
+      const td  = document.createElement('td');
+      td.className = 'num-cell';
+      td.innerHTML = `
+        <div class="num-input-wrap ${ov ? 'is-overridden' : ''}" id="wrap-${ri}-${ci}">
+          <input type="number" min="1" max="99" class="num-input col-${ci}"
+            id="inp-${ri}-${ci}" value="${pad(val)}"
+            oninput="onNumInput(${ri},${ci})"
+            onchange="onNumChange(${ri},${ci})" />
+          <button class="regen-btn" title="Re-randomize" onclick="regenCell(${ri},${ci})">&#x1f500;</button>
+        </div>
+        <div class="override-dot" id="dot-${ri}-${ci}" style="display:${ov?'block':'none'}"></div>`;
+      tr.appendChild(td);
+    }
+
+    const tdAct = document.createElement('td');
+    tdAct.innerHTML = `<div class="row-actions">
+      <button class="btn btn-ghost btn-sm" onclick="regenRow(${ri})" title="Re-randomize whole row">🔀 Row</button>
+      <button class="btn btn-red btn-sm" onclick="clearRowOverrides(${ri})" title="Reset to auto">↩</button>
+    </div>`;
+    tr.appendChild(tdAct);
+    tbody.appendChild(tr);
+  });
+
+  updateStats();
+}
+
+// ── INPUT HANDLERS ────────────────────────────────────
+function onNumInput(ri, ci) {
+  // Just mark as saving — actual value read at save time
+  setSaveStatus('saving');
+}
+function onNumChange(ri, ci) {
+  const inp = document.getElementById(`inp-${ri}-${ci}`);
+  let v = parseInt(inp.value, 10);
+  if (isNaN(v) || v < 1) v = 1;
+  if (v > 99) v = 99;
+  inp.value = pad(v);
+  resultsData[ri].numbers[ci] = v;
+  const changed = v !== resultsData[ri].original[ci];
+  resultsData[ri].overridden[ci] = changed;
+  markOverride(ri, ci, changed);
+  setSaveStatus('saving');
+}
+
+function markOverride(ri, ci, isOv) {
+  const wrap = document.getElementById(`wrap-${ri}-${ci}`);
+  const dot  = document.getElementById(`dot-${ri}-${ci}`);
+  if (wrap) wrap.classList.toggle('is-overridden', isOv);
+  if (dot)  dot.style.display = isOv ? 'block' : 'none';
+}
+
+// ── REGEN HELPERS ───────────────────────────────────
+function regenCell(ri, ci) {
+  const v = rng();
+  resultsData[ri].numbers[ci] = v;
+  resultsData[ri].overridden[ci] = true;
+  const inp = document.getElementById(`inp-${ri}-${ci}`);
+  if (inp) inp.value = pad(v);
+  markOverride(ri, ci, true);
+  updateStats();
+  setSaveStatus('saving');
+}
+
+function regenRow(ri) {
+  for (let ci = 0; ci < 6; ci++) regenCell(ri, ci);
+  showToast(`Row ${TIME_SLOTS[ri].t} ${TIME_SLOTS[ri].p} regenerated`, 'info');
+}
+
+function regenAllUpcoming() {
+  const nowMins = getISTMins();
+  let count = 0;
+  resultsData.forEach((row, ri) => {
+    if (SLOT_MINS[ri] > nowMins) {
+      for (let ci = 0; ci < 6; ci++) {
+        const v = rng();
+        row.numbers[ci] = v;
+        row.overridden[ci] = false;
+        const inp = document.getElementById(`inp-${ri}-${ci}`);
+        if (inp) inp.value = pad(v);
+        markOverride(ri, ci, false);
+      }
+      count++;
+    }
+  });
+  updateStats();
+  setSaveStatus('saving');
+  showToast(`✓ Regenerated ${count} upcoming slots`, 'info');
+}
+
+function clearRowOverrides(ri) {
+  for (let ci = 0; ci < 6; ci++) {
+    if (resultsData[ri].overridden[ci]) {
+      const v = rng();
+      resultsData[ri].numbers[ci] = v;
+      resultsData[ri].overridden[ci] = false;
+      const inp = document.getElementById(`inp-${ri}-${ci}`);
+      if (inp) inp.value = pad(v);
+      markOverride(ri, ci, false);
+    }
+  }
+  updateStats();
+  setSaveStatus('saving');
+}
+
+function resetAllOverrides() {
+  if (!confirm('Clear all admin overrides and regenerate fresh random numbers?')) return;
+  generateFreshData();
+  buildTable();
+  setSaveStatus('saving');
+  showToast('↩ All overrides cleared', 'info');
+}
+
+// ── STATS ───────────────────────────────────────────
+function updateStats() {
+  const nowMins    = getISTMins();
+  const isToday    = currentDate === getISTDateStr();
+  let published = 0, overridden = 0, upcoming = 0;
+  resultsData.forEach((row, ri) => {
+    const isPast = isToday ? SLOT_MINS[ri] <= nowMins : (currentDate < getISTDateStr());
+    if (isPast) published++; else upcoming++;
+    overridden += row.overridden.filter(Boolean).length;
+  });
+  document.getElementById('statPublished').textContent  = published;
+  document.getElementById('statOverridden').textContent = overridden;
+  document.getElementById('statUpcoming').textContent   = upcoming;
+}
+
+// ── SAVE TO SUPABASE ───────────────────────────────
+async function saveAll() {
+  setSaveStatus('saving');
+
+  // Collect current input values
+  const rows = resultsData.map((row, ri) => {
+    const numbers = row.numbers.map((_, ci) => {
+      const inp = document.getElementById(`inp-${ri}-${ci}`);
+      let v = parseInt(inp ? inp.value : row.numbers[ci], 10);
+      if (isNaN(v) || v < 1) v = 1;
+      if (v > 99) v = 99;
+      return v;
+    });
+    return { result_date: currentDate, slot_index: ri, numbers };
+  });
+
+  const { error } = await sb
+    .from('matka_results')
+    .upsert(rows, { onConflict: 'result_date,slot_index' });
+
+  if (error) {
+    setSaveStatus('error');
+    showToast('✗ Save failed: ' + error.message, 'error');
+    return;
+  }
+
+  // Update originals so overridden flags reset
+  resultsData.forEach((row, ri) => {
+    row.original    = [...row.numbers];
+    row.overridden  = [false,false,false,false,false,false];
+    for (let ci = 0; ci < 6; ci++) markOverride(ri, ci, false);
+  });
+
+  setSaveStatus('saved');
+  showToast('✓ All results saved to Supabase!', 'success');
+}
+
+// ── CLOCK ───────────────────────────────────────────
+function updateAdminClock() {
+  const ist  = getIST();
+  const h    = ist.getHours(), m = ist.getMinutes(), s = ist.getSeconds();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12  = h % 12 || 12;
+  document.getElementById('adminClock').textContent =
+    `IST ${pad(h12)}:${pad(m)}:${pad(s)} ${ampm}`;
+}
+
+// ── INIT ────────────────────────────────────────────
+async function initAdmin() {
+  currentDate = getISTDateStr();
+  await loadResults(currentDate);
+  buildTable();
+  updateAdminClock();
+  setInterval(updateAdminClock, 1000);
+  // Refresh row status every minute
+  setInterval(() => { buildTable(); }, 60000);
+  // Auto-save every 5 minutes if unsaved changes pending
+  setInterval(() => {
+    const status = document.getElementById('saveStatus');
+    if (status.classList.contains('saving')) saveAll();
+  }, 300000);
+}
+
+// Auto-restore session if already logged in
+(async function() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) showAdminApp();
+})();
+</script>
+</body>
+</html>

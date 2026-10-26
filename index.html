@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MATKA BOSS – Live Result Board</title>
+  <meta name="description" content="Matka Boss Live Result Board – Scheduled numbers open automatically at their result time. Track real-time matka results across 6 categories every 40 minutes." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <!-- Project config (fill in your Supabase keys in config.js) -->
+  <script src="config.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #eef2f7;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --text-primary: #0f172a;
+      --text-secondary: #64748b;
+      --text-muted: #94a3b8;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.06);
+      --shadow-lg: 0 10px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    /* ─── HEADER ─────────────────────────────── */
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: var(--shadow-sm);
+    }
+    .header-inner {
+      max-width: 1340px; margin: 0 auto;
+      padding: 0 24px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .brand-logo {
+      width: 42px; height: 42px; background: #0f172a;
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 800; color: #fff; letter-spacing: 0.5px;
+    }
+    .brand-name { font-size: 15px; font-weight: 800; color: #0f172a; letter-spacing: 0.5px; display: block; }
+    .brand-sub  { font-size: 11px; color: var(--text-muted); display: block; }
+    .live-badge {
+      display: flex; align-items: center; gap: 7px;
+      background: #f0fdf4; border: 1px solid #bbf7d0;
+      padding: 6px 14px; border-radius: 99px;
+      font-size: 12px; font-weight: 600; color: #15803d;
+    }
+    .live-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: #22c55e;
+      animation: pulse-dot 1.5s infinite;
+    }
+    @keyframes pulse-dot {
+      0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+      70%  { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+      100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+    }
+
+    /* ─── HERO ───────────────────────────────── */
+    .hero {
+      background: linear-gradient(135deg, #0d1b3e 0%, #1e1b4b 40%, #0f2557 70%, #0c1a3a 100%);
+      position: relative; overflow: hidden; padding: 52px 24px;
+    }
+    .hero::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.18) 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 20%, rgba(59,130,246,0.14) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    .hero-deco {
+      position: absolute; border-radius: 50%;
+      background: rgba(255,255,255,0.03); pointer-events: none;
+    }
+    .hero-deco-1 { width: 400px; height: 400px; top: -120px; left: -100px; }
+    .hero-deco-2 { width: 300px; height: 300px; bottom: -80px; left: 30%; }
+    .hero-inner {
+      max-width: 1340px; margin: 0 auto; position: relative; z-index: 1;
+      display: grid; grid-template-columns: 1fr 380px; gap: 40px; align-items: center;
+    }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.35);
+      padding: 6px 14px; border-radius: 99px;
+      font-size: 11px; font-weight: 700; color: #a5b4fc;
+      letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 20px;
+    }
+    .hero-tag-dot { width: 6px; height: 6px; border-radius: 50%; background: #818cf8; animation: pulse-dot 1.5s infinite; }
+    .hero-title {
+      font-size: clamp(44px, 6vw, 72px); font-weight: 900; color: #ffffff;
+      letter-spacing: -1px; line-height: 1; margin-bottom: 16px;
+    }
+    .hero-subtitle {
+      font-size: 14px; color: rgba(255,255,255,0.55);
+      line-height: 1.6; margin-bottom: 28px; max-width: 480px;
+    }
+    .hero-badges { display: flex; gap: 10px; flex-wrap: wrap; }
+    .hero-badge {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14);
+      padding: 7px 14px; border-radius: 8px;
+      font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85);
+    }
+    .hero-badge span { font-weight: 700; color: #fff; }
+    .badge-live { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.3); color: #6ee7b7; }
+    .badge-live span { color: #34d399; }
+
+    /* Timer Widget */
+    .timer-widget {
+      background: rgba(15,23,42,0.65); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px; padding: 22px;
+      backdrop-filter: blur(20px); box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+    .timer-top {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;
+    }
+    .timer-label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.4); letter-spacing: 1px; text-transform: uppercase; }
+    .timer-status-badge {
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      padding: 4px 12px; border-radius: 6px;
+      font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.7); letter-spacing: 1px;
+    }
+    .timer-circle-wrap { display: flex; justify-content: center; margin-bottom: 20px; }
+    .timer-circle {
+      width: 110px; height: 110px; border-radius: 50%;
+      background: rgba(255,255,255,0.04); border: 2px solid rgba(255,255,255,0.1);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    }
+    .tc-label { font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.35); letter-spacing: 1px; text-transform: uppercase; }
+    .tc-icon  { font-size: 28px; color: rgba(255,255,255,0.8); }
+    .tc-sub   { font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.35); letter-spacing: 1px; text-transform: uppercase; }
+    .timer-status-text {
+      text-align: center; font-size: 10px; font-weight: 600;
+      color: rgba(255,255,255,0.3); letter-spacing: 0.8px;
+      text-transform: uppercase; margin-bottom: 12px;
+    }
+    .timer-countdown {
+      text-align: center; font-family: 'JetBrains Mono', monospace;
+      font-size: 38px; font-weight: 700; color: #fff;
+      letter-spacing: 2px; margin-bottom: 6px;
+    }
+    .timer-alert { text-align: center; font-size: 10px; color: rgba(255,255,255,0.3); margin-bottom: 18px; }
+    .timer-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;
+    }
+    .tf-ist-label { font-size: 10px; color: rgba(255,255,255,0.3); font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; }
+    .tf-time { font-size: 14px; color: #fff; font-weight: 600; }
+    .tf-date { font-size: 11px; color: rgba(255,255,255,0.4); }
+
+    /* ─── RESULTS SECTION ────────────────────── */
+    .results-section { max-width: 1340px; margin: 0 auto; padding: 40px 24px 0; }
+    .results-header {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      margin-bottom: 28px; flex-wrap: wrap; gap: 20px;
+    }
+    .results-label {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 11px; font-weight: 700; color: #3b82f6;
+      letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px;
+    }
+    .results-label-bar { width: 28px; height: 3px; border-radius: 2px; background: linear-gradient(90deg, #3b82f6, #06b6d4); }
+    .results-heading { font-size: 28px; font-weight: 800; color: var(--text-primary); margin-bottom: 5px; }
+    .results-sub { font-size: 13px; color: var(--text-secondary); }
+    .results-sub a { color: #3b82f6; text-decoration: none; font-weight: 500; }
+
+    .date-select-wrap { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+    .date-select-label { font-size: 10px; font-weight: 700; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; }
+    .date-select-controls { display: flex; gap: 8px; align-items: center; }
+    .date-input {
+      padding: 9px 14px; border: 1px solid var(--border);
+      border-radius: 10px; font-size: 13px; font-weight: 500;
+      color: var(--text-primary); background: #fff;
+      font-family: 'Inter', sans-serif; box-shadow: var(--shadow-sm); outline: none;
+    }
+    .date-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    .btn-view {
+      padding: 9px 18px; background: #0f172a; color: #fff;
+      border: none; border-radius: 10px; font-size: 13px; font-weight: 600;
+      cursor: pointer; font-family: 'Inter', sans-serif;
+      transition: background 0.2s, transform 0.15s; box-shadow: var(--shadow-sm);
+    }
+    .btn-view:hover { background: #1e293b; transform: translateY(-1px); }
+
+    /* ─── CATEGORY CARDS ─────────────────────── */
+    .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+    .cat-card {
+      border-radius: 18px; padding: 22px 22px 20px;
+      position: relative; overflow: hidden; min-height: 180px;
+      display: flex; flex-direction: column; justify-content: space-between;
+      transition: transform 0.2s, box-shadow 0.2s; cursor: default;
+    }
+    .cat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+    .cat-card::before, .cat-card::after {
+      content: ''; position: absolute; border-radius: 50%;
+      background: rgba(255,255,255,0.08); pointer-events: none;
+    }
+    .cat-card::before { width: 200px; height: 200px; right: -60px; top: -60px; }
+    .cat-card::after  { width: 140px; height: 140px; right: 40px; bottom: -50px; }
+    .cat-card.sultan    { background: linear-gradient(135deg, #2563eb 0%, #0891b2 100%); }
+    .cat-card.worli     { background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); }
+    .cat-card.rajshri   { background: linear-gradient(135deg, #059669 0%, #06b6d4 100%); }
+    .cat-card.charminar { background: linear-gradient(135deg, #ea580c 0%, #f59e0b 100%); }
+    .cat-card.bhagya    { background: linear-gradient(135deg, #dc2626 0%, #ec4899 100%); }
+    .cat-card.peshawar  { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); }
+
+    .cat-top { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; }
+    .cat-name { font-size: 13px; font-weight: 800; color: #fff; letter-spacing: 1.5px; text-transform: uppercase; }
+    .cat-time {
+      background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25);
+      padding: 4px 11px; border-radius: 99px; font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.9);
+    }
+    .cat-num-box {
+      background: #fff; border-radius: 14px; width: 76px; height: 76px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 34px; font-weight: 900; color: #0f172a;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      font-family: 'JetBrains Mono', monospace;
+      position: relative; z-index: 1;
+    }
+    .cat-bottom {
+      display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1;
+    }
+    .cat-bottom-label { font-size: 11px; color: rgba(255,255,255,0.6); }
+    .cat-published { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.85); }
+    .pub-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; }
+
+    /* ─── COMPLETE CHART ─────────────────────── */
+    .chart-section { padding: 0 24px 40px; max-width: 1340px; margin: 0 auto; }
+    .chart-card { background: var(--card-bg); border-radius: 18px; border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow-md); }
+    .chart-header {
+      padding: 18px 24px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    }
+    .ch-tag  { font-size: 10px; font-weight: 700; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px; }
+    .ch-date { font-size: 18px; font-weight: 800; color: var(--text-primary); }
+    .ch-slots{ font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .ch-right { display: flex; align-items: center; gap: 12px; }
+    .scroll-hint { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+    .auto-pub-badge {
+      display: flex; align-items: center; gap: 6px;
+      background: #f0fdf4; border: 1px solid #bbf7d0;
+      padding: 5px 12px; border-radius: 99px; font-size: 11px; font-weight: 600; color: #15803d;
+    }
+    .ap-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; }
+
+    .chart-table-wrap { overflow-x: auto; }
+    .chart-table { width: 100%; border-collapse: collapse; min-width: 760px; }
+    .chart-table thead tr { border-bottom: 1px solid var(--border); }
+    .chart-table th {
+      padding: 14px 16px; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.8px;
+      text-align: center; background: #f8fafc;
+    }
+    .th-time { text-align: left !important; }
+    .th-time span {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #0f172a; color: #fff; padding: 5px 14px;
+      border-radius: 99px; font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    }
+    .th-cat { display: inline-flex; align-items: center; gap: 6px; }
+    .th-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+    .chart-table tbody tr { border-bottom: 1px solid #f1f5f9; transition: background 0.15s; }
+    .chart-table tbody tr:last-child { border-bottom: none; }
+    .chart-table tbody tr:hover { background: #f8fafc; }
+    .chart-table td { padding: 12px 16px; text-align: center; }
+    .td-time { text-align: left !important; }
+    .td-time-main { font-size: 14px; font-weight: 700; color: var(--text-primary); display: block; line-height: 1.2; }
+    .td-time-ampm { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; display: block; }
+
+    .num-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 52px; height: 44px; border-radius: 10px;
+      font-size: 16px; font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      transition: transform 0.15s;
+    }
+    .num-badge:hover { transform: scale(1.08); }
+    .col-sultan    { background: #eff6ff; color: #1d4ed8; }
+    .col-worli     { background: #f5f3ff; color: #6d28d9; }
+    .col-rajshri   { background: #ecfdf5; color: #047857; }
+    .col-charminar { background: #fff7ed; color: #c2410c; }
+    .col-bhagya    { background: #fff1f2; color: #b91c1c; }
+    .col-peshawar  { background: #eef2ff; color: #3730a3; }
+    .row-latest { background: #f0f9ff !important; }
+
+    /* ─── FOOTER ─────────────────────────────── */
+    footer { background: #fff; border-top: 1px solid var(--border); padding: 20px 24px; margin-top: 8px; }
+    .footer-inner {
+      max-width: 1340px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .footer-brand { font-size: 12px; color: var(--text-muted); text-align: center; }
+    .footer-brand strong { color: var(--text-primary); display: block; font-size: 13px; margin-bottom: 2px; }
+
+    /* ─── RESPONSIVE ─────────────────────────── */
+    @media (max-width: 900px) {
+      .hero-inner { grid-template-columns: 1fr; }
+      .timer-widget { max-width: 360px; }
+      .cards-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .hero { padding: 36px 16px; }
+      .results-section, .chart-section { padding-left: 16px; padding-right: 16px; }
+      .cards-grid { grid-template-columns: 1fr; }
+      .results-header { flex-direction: column; align-items: flex-start; }
+      .date-select-wrap { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <a class="brand" href="#">
+      <div class="brand-logo">MB</div>
+      <div>
+        <span class="brand-name">MATKA BOSS</span>
+        <span class="brand-sub">Live Result Board</span>
+      </div>
+    </a>
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      Live updates
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-deco hero-deco-1"></div>
+  <div class="hero-deco hero-deco-2"></div>
+  <div class="hero-inner">
+    <div>
+      <div class="hero-tag"><div class="hero-tag-dot"></div>Automatic Result System</div>
+      <h1 class="hero-title">MATKA BOSS</h1>
+      <p class="hero-subtitle">Live Result Board · Scheduled numbers open automatically at their result time.</p>
+      <div class="hero-badges">
+        <div class="hero-badge"><span>40</span>&nbsp;min interval</div>
+        <div class="hero-badge"><span>6</span>&nbsp;categories</div>
+        <div class="hero-badge badge-live"><span>LIVE</span>&nbsp;status</div>
+      </div>
+    </div>
+
+    <!-- Timer Widget -->
+    <div class="timer-widget">
+      <div class="timer-top">
+        <span class="timer-label">NEXT RESULT</span>
+        <span class="timer-status-badge" id="timerBadge">COMPLETE</span>
+      </div>
+      <div class="timer-circle-wrap">
+        <div class="timer-circle">
+          <span class="tc-label">NEXT DRAW</span>
+          <span class="tc-icon" id="tcIcon">✓</span>
+          <span class="tc-sub" id="tcSub">DONE</span>
+        </div>
+      </div>
+      <div class="timer-status-text" id="timerStatusTxt">ALL SCHEDULED RESULTS OPENED</div>
+      <div class="timer-countdown" id="timerCountdown">00:00:00</div>
+      <div class="timer-alert">Automatic ring alert in the final 5 seconds</div>
+      <div class="timer-footer">
+        <span class="tf-ist-label">IST</span>
+        <span class="tf-time" id="istTime">--:-- --</span>
+        <span class="tf-date" id="istDate">-- --- ----</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RESULTS SECTION -->
+<div class="results-section">
+  <div class="results-header">
+    <div>
+      <div class="results-label">
+        <div class="results-label-bar"></div>RESULTS
+      </div>
+      <h2 class="results-heading">Live Result Board</h2>
+      <p class="results-sub">Latest category results and <a href="#chart">complete time-wise result chart.</a></p>
+    </div>
+    <div class="date-select-wrap">
+      <div class="date-select-label">SELECT DATE</div>
+      <div class="date-select-controls">
+        <input type="date" id="dateInput" class="date-input" />
+        <button class="btn-view" onclick="viewResults()">View results</button>
+      </div>
+    </div>
+  </div>
+  <div class="cards-grid" id="cardsGrid"></div>
+</div>
+
+<!-- COMPLETE CHART -->
+<div class="chart-section" id="chart">
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="ch-tag">COMPLETE CHART</div>
+        <div class="ch-date" id="chartDate">Friday, 23 Oct 2026</div>
+        <div class="ch-slots">16 time slots · every 40 minutes</div>
+      </div>
+      <div class="ch-right">
+        <span class="scroll-hint">↔ Swipe / scroll</span>
+        <div class="auto-pub-badge"><div class="ap-dot"></div>Auto publish</div>
+      </div>
+    </div>
+    <div class="chart-table-wrap">
+      <table class="chart-table">
+        <thead>
+          <tr>
+            <th class="th-time"><span>TIME</span></th>
+            <th><span class="th-cat"><span class="th-dot" style="background:#3b82f6"></span>SULTAN PURI</span></th>
+            <th><span class="th-cat"><span class="th-dot" style="background:#8b5cf6"></span>WORLI</span></th>
+            <th><span class="th-cat"><span class="th-dot" style="background:#10b981"></span>RAJSHRI</span></th>
+            <th><span class="th-cat"><span class="th-dot" style="background:#f97316"></span>CHARMINAR</span></th>
+            <th><span class="th-cat"><span class="th-dot" style="background:#ef4444"></span>BHAGYA REKHA</span></th>
+            <th><span class="th-cat"><span class="th-dot" style="background:#6366f1"></span>PESHAWAR</span></th>
+          </tr>
+        </thead>
+        <tbody id="chartBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <strong>MATKA BOSS</strong>
+      Live Result Board &copy; <span id="footerYear"></span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// MATKA BOSS — Public Site JS (Supabase Edition)
+// • Loads today's results from Supabase on page load
+// • If no data exists for today, generates random numbers & stores them
+// • Only reveals numbers for time slots that have already passed (IST)
+// • Auto-refreshes from Supabase every 60 s to pick up admin edits
+// ═══════════════════════════════════════════════════════════════════
+
+// ── SUPABASE INIT ────────────────────────────────────────────────
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ── CONSTANTS ────────────────────────────────────────────────────
+const CATEGORIES = [
+  { name:'SULTAN PURI',  css:'sultan',    col:'col-sultan'    },
+  { name:'WORLI',        css:'worli',     col:'col-worli'     },
+  { name:'RAJSHRI',      css:'rajshri',   col:'col-rajshri'   },
+  { name:'CHARMINAR',    css:'charminar', col:'col-charminar' },
+  { name:'BHAGYA REKHA', css:'bhagya',    col:'col-bhagya'    },
+  { name:'PESHAWAR',     css:'peshawar',  col:'col-peshawar'  },
+];
+
+const TIME_SLOTS = [
+  {t:'09:00',p:'AM'},{t:'09:40',p:'AM'},{t:'10:20',p:'AM'},{t:'11:00',p:'AM'},
+  {t:'11:40',p:'AM'},{t:'12:20',p:'PM'},{t:'01:00',p:'PM'},{t:'01:40',p:'PM'},
+  {t:'02:20',p:'PM'},{t:'03:00',p:'PM'},{t:'03:40',p:'PM'},{t:'04:20',p:'PM'},
+  {t:'05:00',p:'PM'},{t:'05:40',p:'PM'},{t:'06:20',p:'PM'},{t:'07:00',p:'PM'},
+];
+
+// Emergency fallback if Supabase is completely unreachable
+const FALLBACK_DATA = [
+  [56,15,61,27,66,18],[87,86,29,30,33,88],[5,98,23,52,37,70],[23,23,37,18,51,10],
+  [13,76,22,17,73,21],[25,39,74,9,29,99],[76,49,77,30,99,6],[29,40,13,52,4,35],
+  [5,1,11,88,40,87],[42,28,53,26,10,89],[2,1,23,46,6,22],[80,97,95,44,29,20],
+  [48,44,29,90,7,60],[25,55,12,14,27,14],[56,51,60,40,80,23],[3,3,64,39,35,26],
+];
+
+// ── STATE ────────────────────────────────────────────────────────
+// todayResults[slotIndex] = [n0, n1, n2, n3, n4, n5]  (6 numbers per slot)
+let todayResults = null;
+
+// ── HELPERS ──────────────────────────────────────────────────────
+function rnd1to99() { return Math.floor(Math.random() * 99) + 1; }
+
+function getIST() {
+  const now = new Date();
+  return new Date(now.getTime() + now.getTimezoneOffset()*60000 + 5.5*3600000);
+}
+function getISTDateStr() {
+  const ist = getIST();
+  return `${ist.getFullYear()}-${String(ist.getMonth()+1).padStart(2,'0')}-${String(ist.getDate()).padStart(2,'0')}`;
+}
+function slotToMins(slot) {
+  let [h, m] = slot.t.split(':').map(Number);
+  if (slot.p === 'PM' && h !== 12) h += 12;
+  if (slot.p === 'AM' && h === 12) h = 0;
+  return h * 60 + m;
+}
+const SLOT_MINS    = TIME_SLOTS.map(slotToMins);
+const LAST_SLOT_MIN = SLOT_MINS[SLOT_MINS.length - 1];
+
+function isSlotPublished(ri) {
+  const ist     = getIST();
+  const nowMins = ist.getHours() * 60 + ist.getMinutes();
+  return nowMins >= SLOT_MINS[ri];
+}
+
+// ── SUPABASE DATA LAYER ───────────────────────────────────────────
+/**
+ * Fetches today's results from Supabase.
+ * If the day has no data yet, generates random numbers for all 16 slots
+ * and inserts them (UNIQUE constraint prevents accidental overwrites).
+ */
+async function loadOrGenerateResults() {
+  const dateStr = getISTDateStr();
+
+  // 1. Fetch existing rows for today
+  const { data, error } = await sb
+    .from('matka_results')
+    .select('slot_index, numbers')
+    .eq('result_date', dateStr)
+    .order('slot_index');
+
+  if (error) {
+    console.warn('Supabase fetch error:', error.message);
+    todayResults = todayResults || FALLBACK_DATA; // keep last known data if any
+    return;
+  }
+
+  // 2. All 16 slots already exist — just use them
+  if (data && data.length === 16) {
+    todayResults = data.map(r => r.numbers);
+    return;
+  }
+
+  // 3. Some (or all) slots are missing — generate & insert the missing ones
+  const existingSlots = new Set((data || []).map(r => r.slot_index));
+  const toInsert = TIME_SLOTS
+    .map((_, i) => ({
+      result_date: dateStr,
+      slot_index: i,
+      numbers: [rnd1to99(), rnd1to99(), rnd1to99(), rnd1to99(), rnd1to99(), rnd1to99()]
+    }))
+    .filter(r => !existingSlots.has(r.slot_index));
+
+  if (toInsert.length > 0) {
+    // ignoreDuplicates: true — safe even if another tab already inserted
+    await sb.from('matka_results').upsert(toInsert, {
+      onConflict: 'result_date,slot_index',
+      ignoreDuplicates: true
+    });
+  }
+
+  // 4. Re-fetch the now-complete dataset
+  const { data: fresh } = await sb
+    .from('matka_results')
+    .select('slot_index, numbers')
+    .eq('result_date', dateStr)
+    .order('slot_index');
+
+  todayResults = (fresh && fresh.length > 0)
+    ? fresh.map(r => r.numbers)
+    : FALLBACK_DATA;
+}
+
+function getNumber(slotIdx, catIdx) {
+  if (todayResults && todayResults[slotIdx]) return todayResults[slotIdx][catIdx];
+  return FALLBACK_DATA[slotIdx][catIdx];
+}
+
+// ── RENDER CARDS ─────────────────────────────────────────────────
+function renderCards() {
+  const ist     = getIST();
+  const nowMins = ist.getHours() * 60 + ist.getMinutes();
+
+  let latestSlotIdx = -1;
+  for (let i = TIME_SLOTS.length - 1; i >= 0; i--) {
+    if (nowMins >= SLOT_MINS[i]) { latestSlotIdx = i; break; }
+  }
+
+  const grid = document.getElementById('cardsGrid');
+  if (latestSlotIdx === -1) {
+    grid.innerHTML = CATEGORIES.map(c => `
+      <div class="cat-card ${c.css}">
+        <div class="cat-top"><span class="cat-name">${c.name}</span><span class="cat-time">09:00 AM</span></div>
+        <div class="cat-num-box" style="font-size:18px;color:#94a3b8">--</div>
+        <div class="cat-bottom">
+          <span class="cat-bottom-label">First result at 09:00 AM</span>
+          <span class="cat-published" style="color:rgba(255,255,255,0.5)">PENDING</span>
+        </div>
+      </div>`).join('');
+    return;
+  }
+
+  const latestSlot = TIME_SLOTS[latestSlotIdx];
+  grid.innerHTML = CATEGORIES.map((c, i) => `
+    <div class="cat-card ${c.css}">
+      <div class="cat-top"><span class="cat-name">${c.name}</span><span class="cat-time">${latestSlot.t} ${latestSlot.p}</span></div>
+      <div class="cat-num-box">${String(getNumber(latestSlotIdx, i)).padStart(2,'0')}</div>
+      <div class="cat-bottom">
+        <span class="cat-bottom-label">Latest published result</span>
+        <span class="cat-published"><span class="pub-dot"></span>PUBLISHED</span>
+      </div>
+    </div>`).join('');
+}
+
+// ── RENDER CHART ─────────────────────────────────────────────────
+function renderChart() {
+  const ist     = getIST();
+  const nowMins = ist.getHours() * 60 + ist.getMinutes();
+
+  document.getElementById('chartBody').innerHTML = TIME_SLOTS.map((slot, ri) => {
+    const published = nowMins >= SLOT_MINS[ri];
+    const isLatest  = published && (ri === TIME_SLOTS.length - 1 || !isSlotPublished(ri + 1));
+    return `
+    <tr class="${isLatest ? 'row-latest' : ''}">
+      <td class="td-time">
+        <span class="td-time-main">${slot.t}</span>
+        <span class="td-time-ampm">${slot.p}</span>
+      </td>
+      ${CATEGORIES.map((c, ci) => {
+        if (!published)
+          return `<td><span class="num-badge" style="background:#f1f5f9;color:#cbd5e1;letter-spacing:1px;font-size:13px">--</span></td>`;
+        return `<td><span class="num-badge ${c.col}">${String(getNumber(ri, ci)).padStart(2,'0')}</span></td>`;
+      }).join('')}
+    </tr>`;
+  }).join('');
+}
+
+// ── DATE DISPLAY ─────────────────────────────────────────────────
+function formatDate(d) {
+  const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+function viewResults() {
+  const v = document.getElementById('dateInput').value;
+  if (v) document.getElementById('chartDate').textContent = formatDate(new Date(v + 'T00:00:00'));
+}
+
+// ── LIVE CLOCK + COUNTDOWN ───────────────────────────────────────
+function updateClock() {
+  const ist  = getIST();
+  const h24  = ist.getHours(), m = ist.getMinutes(), s = ist.getSeconds();
+  const ampm = h24 >= 12 ? 'pm' : 'am';
+  const h12  = h24 % 12 || 12;
+  document.getElementById('istTime').textContent =
+    `${String(h12).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} ${ampm}`;
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  document.getElementById('istDate').textContent =
+    `${String(ist.getDate()).padStart(2,'0')} ${months[ist.getMonth()]} ${ist.getFullYear()}`;
+
+  const nowMins = h24 * 60 + m;
+  const badge = document.getElementById('timerBadge');
+  const icon  = document.getElementById('tcIcon');
+  const sub   = document.getElementById('tcSub');
+  const stxt  = document.getElementById('timerStatusTxt');
+  const cd    = document.getElementById('timerCountdown');
+
+  let nextMin = SLOT_MINS.find(sm => sm > nowMins || (sm === nowMins && s === 0));
+  if (nextMin === undefined || nowMins > LAST_SLOT_MIN) {
+    badge.textContent = 'COMPLETE'; icon.textContent = '✓'; sub.textContent = 'DONE';
+    stxt.textContent  = 'ALL SCHEDULED RESULTS OPENED'; cd.textContent = '00:00:00';
+  } else {
+    const diffSec = (nextMin - nowMins) * 60 - s;
+    if (diffSec <= 0) {
+      badge.textContent = 'LIVE'; icon.textContent = '●'; sub.textContent = 'LIVE';
+      stxt.textContent  = 'RESULT PUBLISHING NOW'; cd.textContent = '00:00:00';
+      renderCards(); renderChart();
+    } else {
+      badge.textContent = 'UPCOMING'; icon.textContent = '⏱'; sub.textContent = 'NEXT';
+      stxt.textContent  = 'NEXT RESULT IN';
+      const hh  = Math.floor(diffSec / 3600);
+      const mm2 = Math.floor((diffSec % 3600) / 60);
+      const ss  = diffSec % 60;
+      cd.textContent = `${String(hh).padStart(2,'0')}:${String(mm2).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+    }
+  }
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+(async function () {
+  const now = new Date();
+  const y  = now.getFullYear();
+  const mo = String(now.getMonth() + 1).padStart(2, '0');
+  const d  = String(now.getDate()).padStart(2, '0');
+  document.getElementById('dateInput').value   = `${y}-${mo}-${d}`;
+  document.getElementById('footerYear').textContent = y;
+  document.getElementById('chartDate').textContent  = formatDate(now);
+
+  // Fetch from Supabase (or generate today's data if missing)
+  await loadOrGenerateResults();
+
+  renderCards();
+  renderChart();
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // Re-fetch from Supabase every 60 s — picks up admin edits instantly
+  setInterval(async () => {
+    await loadOrGenerateResults();
+    renderCards();
+    renderChart();
+  }, 60000);
+})();
+</script>
+</body>
+</html>
